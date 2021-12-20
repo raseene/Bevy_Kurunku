@@ -1,0 +1,103 @@
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>くるんくる～ぱ</title>
+  </head>
+
+<body bgcolor="#e4e0d0">
+<br>
+　　<canvas id="kurunku"></canvas>
+
+<script>
+(function () {
+  // An array of all contexts to resume on the page
+  const audioContextList = [];
+
+  // An array of various user interaction events we should listen for
+  const userInputEventNames = [
+      'click', 'contextmenu', 'auxclick', 'dblclick', 'mousedown',
+      'mouseup', 'pointerup', 'touchend', 'keydown', 'keyup'
+  ];
+
+  // A proxy object to intercept AudioContexts and
+  // add them to the array for tracking and resuming later
+  self.AudioContext = new Proxy(self.AudioContext, {
+    construct(target, args) {
+      const result = new target(...args);
+      audioContextList.push(result);
+      return result;
+    }
+  });
+
+  // To resume all AudioContexts being tracked
+  function resumeAllContexts(event) {
+    let count = 0;
+
+    audioContextList.forEach(context => {
+      if (context.state !== 'running') {
+        context.resume()
+      } else {
+        count++;
+      }
+    });
+
+    // If all the AudioContexts have now resumed then we
+    // unbind all the event listeners from the page to prevent
+    // unnecessary resume attempts
+    if (count == audioContextList.length) {
+      userInputEventNames.forEach(eventName => {
+        document.removeEventListener(eventName, resumeAllContexts); 
+      });
+    }
+  }
+
+  // We bind the resume function for each user interaction
+  // event on the page
+  userInputEventNames.forEach(eventName => {
+    document.addEventListener(eventName, resumeAllContexts); 
+  });
+})();
+</script>
+
+<script type="module">
+  import init from "./target/wasm.js";
+  init();
+</script>
+
+<br>
+<h2><font color="#003020">　くるくるアクションパズル</font>　<font size="+3" color="#002030">くるんくる～ぱ</font></h2>
+<p>
+くるくる回して、ぱ～っと消す！<br>
+簡単なルールで５色の球を消しまくる、爽快なアクションパズルゲームです。
+</p>
+<p>
+◆ルール◆<br>
+球の間の回転軸をタッチすると、その周りの３つの球が右回りに回転して位置を入れ替えます。<br>
+このとき同じ色の球が三角に並ぶとそれらの球は消え、空いた所には上の球が落ちてきます。<br>
+そして、また三角に並べばそれらの球も消えます。
+</p>
+<p>
+制限時間の60秒が経過するとゲーム終了です。
+</p>
+<p>
+◆謝辞◆<br>
+ゲーム中のBGMには <A target="_blank" href="http://dova-s.jp/">フリーBGM DOVA-SYNDROME</A>より、次の曲を使用させていただきました。<br>
+</p>
+<p>
+　<A target="_blank" href="http://dova-s.jp/bgm/play582.html">「ユーエフオーでつかまえて」</A> written by "フフフ"
+</p>
+<p>
+どうもありがとうございます。
+</p>
+<p>
+◆開発について◆<br>
+このゲームの作成には、Rust製のゲームエンジン <A target="_blank" href="https://bevyengine.org/">Bevy</A>を使用しています。<br>
+</p>
+<p>
+・開発プロジェクト<br>
+・解説<br>
+</p>
+<hr size="3" width="100%">
+Copyright(C) 2021 HANAI Akiyoshi
+</body>
+</html>
