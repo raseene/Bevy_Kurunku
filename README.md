@@ -25,7 +25,7 @@ Web用
 ```
 cargo make serve
 ```
-ブラウザから、http://localhost:4000/で起動します。
+ブラウザから、[http://localhost:4000/](http://localhost:4000)で起動します。
 
 ネイティブ用
 
