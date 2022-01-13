@@ -51,10 +51,10 @@ Web用（リリース）
 cargo build --release --target wasm32-unknown-unknown
 wasm-bindgen --out-dir ./out/ --target web ./target/wasm32-unknown-unknown/release/kurunku.wasm
 ```
-index.html
-out/kurunku.js
-out/kurunku_bg.wasm
-assets/*.*
+index.html  
+out/kurunku.js  
+out/kurunku_bg.wasm  
+assets/\*.\*  
 以上のファイルを、Web サーバーに配置します。
 
 ## ライセンス
