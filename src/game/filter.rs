@@ -5,6 +5,7 @@ use bevy::prelude::*;
 /**********************
     タイムアップ警告
  **********************/
+#[derive(Component)]
 pub struct	WarningFilter;
 
 impl WarningFilter
@@ -12,13 +13,17 @@ impl WarningFilter
 	/************
 	    初期化
 	 ************/
-	pub fn	init(_commands: &mut Commands, _materials: &mut ResMut<Assets<ColorMaterial>>)
+	pub fn	init(_commands: &mut Commands)
 	{
 		_commands.spawn_bundle(SpriteBundle
 		{
-			sprite: Sprite::new(Vec2::new(344.0, 360.0)),
+			sprite: Sprite
+			{
+				color: Color::rgba(1.0, 0.0, 0.0, 0.0),
+				custom_size: Some(Vec2::new(344.0, 360.0)),
+				..Default::default()
+			},
 			transform: Transform::from_translation(Vec3::new(-148.0, 0.0, 0.5)),
-			material: _materials.add(Color::rgba(1.0, 0.0, 0.0, 0.0).into()),
 			..Default::default()
 		})
 		.insert(WarningFilter);
@@ -28,9 +33,9 @@ impl WarningFilter
 	    設定
 			引数	_aplha = α値
 	 *******************************/
-	pub fn	set(&mut self, _alpha: f32, _mat: &mut ColorMaterial)
+	pub fn	set(&mut self, _alpha: f32, _spr: &mut Sprite)
 	{
-		_mat.color.set_a(_alpha);
+		_spr.color.set_a(_alpha);
 	}
 }
 
@@ -38,6 +43,7 @@ impl WarningFilter
 /**********************
     ゲームオーバー時
  **********************/
+#[derive(Component)]
 pub struct	OverFilter
 {
 	cnt: isize,				// カウンタ
@@ -48,13 +54,17 @@ impl OverFilter
 	/************
 	    初期化
 	 ************/
-	pub fn	init(_commands: &mut Commands, _materials: &mut ResMut<Assets<ColorMaterial>>)
+	pub fn	init(_commands: &mut Commands)
 	{
 		_commands.spawn_bundle(SpriteBundle
 		{
-			sprite: Sprite::new(Vec2::new(344.0, 360.0)),
+			sprite: Sprite
+			{
+				color: Color::rgba(0.0, 0.0, 0.0, 0.0),
+				custom_size: Some(Vec2::new(344.0, 360.0)),
+				..Default::default()
+			},
 			transform: Transform::from_translation(Vec3::new(-148.0, 0.0, 4.5)),
-			material: _materials.add(Color::rgba(0.0, 0.0, 0.0, 0.0).into()),
 			..Default::default()
 		})
 		.insert(OverFilter{cnt: 0});
@@ -63,11 +73,11 @@ impl OverFilter
 	/**********
 	    稼働
 	 **********/
-	pub fn	update(&mut self, _mat: &mut ColorMaterial)
+	pub fn	update(&mut self, _spr: &mut Sprite)
 	{
 		if self.cnt < 24 {
 			self.cnt += 1;
-			_mat.color.set_a((self.cnt as f32)/72.0);
+			_spr.color.set_a((self.cnt as f32)/72.0);
 		}
 	}
 }

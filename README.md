@@ -18,20 +18,44 @@ Rust製のゲームエンジン [Bevy](https://bevyengine.org)で作られたミ
 cargo install cargo-make
 ```
 
+* WASMサポートを追加
+
+```
+rustup target install wasm32-unknown-unknown
+```
+
+* wasm-server-runner：ブラウザで実行
+
+```
+cargo install wasm-server-runner
+```
+
 ## ビルド
-
-Web用
-
-```
-cargo make serve
-```
-ブラウザから、[http://localhost:4000/](http://localhost:4000)で起動します。
 
 ネイティブ用
 
 ```
-cargo make run
+cargo run
 ```
+
+Web用（デバッグ）
+
+```
+cargo run --target wasm32-unknown-unknown
+```
+表示されたアドレスを、ブラウザから起動します。
+
+Web用（リリース）
+
+```
+cargo build --release --target wasm32-unknown-unknown
+wasm-bindgen --out-dir ./out/ --target web ./target/wasm32-unknown-unknown/release/kurunku.wasm
+```
+index.html
+out/kurunku.js
+out/kurunku_bg.wasm
+assets/*.*
+以上のファイルを、Web サーバーに配置します。
 
 ## ライセンス
 

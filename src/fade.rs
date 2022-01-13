@@ -5,6 +5,7 @@ use bevy::prelude::*;
 /*************************
     フェードイン/アウト
  *************************/
+#[derive(Component)]
 pub struct Fade
 {
 	alpha: f32,			// α値
@@ -20,9 +21,13 @@ impl Fade
 	{
 		_commands.spawn_bundle(SpriteBundle
 		{
-			sprite: Sprite::new(Vec2::new(crate::SCREEN_WIDTH, crate::SCREEN_HEIGHT)),
+			sprite: Sprite
+			{
+				color: Color::rgba(0.0, 0.0, 0.0, 1.0),
+				custom_size: Some(Vec2::new(crate::SCREEN_WIDTH, crate::SCREEN_HEIGHT)),
+				..Default::default()
+			},
 			transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0)),
-			material: _materials.add(Color::rgba(0.0, 0.0, 0.0, 1.0).into()),
 			..Default::default()
 		})
 		.insert(Fade{alpha: 1.0, speed: 0.0});
@@ -31,7 +36,7 @@ impl Fade
 	/**********
 	    稼働
 	 **********/
-	pub fn	update(&mut self, _mat: &mut ColorMaterial)
+	pub fn	update(&mut self, _spr: &mut Sprite)
 	{
 		if self.speed != 0.0 {
 			self.alpha += self.speed;
@@ -43,7 +48,7 @@ impl Fade
 				self.alpha = 1.0;
 				self.speed = 0.0;
 			}
-			_mat.color.set_a(self.alpha);
+			_spr.color.set_a(self.alpha);
 		}
 	}
 
@@ -79,8 +84,8 @@ impl Fade
 /**********
     稼働
  **********/
-pub fn	update(mut _materials: ResMut<Assets<ColorMaterial>>, mut _query: Query<(&mut Fade, &Handle<ColorMaterial>)>)
+pub fn	update(mut _materials: ResMut<Assets<ColorMaterial>>, mut _query: Query<(&mut Fade, &mut Sprite)>)
 {
-	let	(mut _fade, _mat) = _query.single_mut().unwrap();
-	_fade.update(_materials.get_mut(_mat).unwrap());
+	let	(mut _fade, mut _spr) = _query.single_mut();
+	_fade.update(&mut _spr);
 }

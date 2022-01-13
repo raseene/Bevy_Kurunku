@@ -8,6 +8,8 @@ use	bevy_kira_audio::AudioSource;
 
 
 pub struct	AssetsLoading(Vec<HandleUntyped>);
+
+#[derive(Component)]
 struct	NowLoading;
 
 /******************
@@ -31,7 +33,7 @@ fn	setup(mut _commands: Commands, _asset: Res<AssetServer>)
 		"sprite/game_over.png",
 	];
 	 for _file in sprite.iter() {
-		let	_data: Handle<Texture> = _asset.load(*_file);
+		let	_data: Handle<Image> = _asset.load(*_file);
 		_vec.push(_data.clone_untyped());
 	}
 
@@ -112,19 +114,19 @@ pub struct	LoadingPlugin;
 
 impl Plugin for LoadingPlugin
 {
-	fn	build(&self, _app: &mut AppBuilder)
+	fn	build(&self, _app: &mut App)
 	{
 		_app.add_system_set(
 			SystemSet::on_enter(crate::AppState::LOADING)
-				.with_system(setup.system())
+				.with_system(setup)
 		);
 		_app.add_system_set(
 			SystemSet::on_update(crate::AppState::LOADING)
-				.with_system(update.system())
+				.with_system(update)
 		);
 		_app.add_system_set(
 			SystemSet::on_exit(crate::AppState::LOADING)
-				.with_system(exit.system())
+				.with_system(exit)
 		);
 	}
 }

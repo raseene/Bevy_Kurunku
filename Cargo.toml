@@ -1,38 +1,43 @@
 [package]
 name = "kurunku"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["HANAI Akiyoshi"]
 edition = "2021"
-repository = "https://github.com/mrk-its/bevy_webgl2_app_template"
+repository = "https://github.com/raseene/Bevy_Kurunku"
 license = "MIT OR Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
-rand = "0.8"
-tracing-wasm = "=0.2.0"
-
-bevy_kira_audio = { version = "0.6.0", default-features = false, features = ["ogg"] }
-
-# Dependencies for native only.
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-bevy = { version = "0.5", default-features = false, features = ["bevy_gltf", "bevy_winit", "render", "png", "bevy_wgpu"] }
-[target.'cfg(target_os = "linux")'.dependencies]
-winit = { version = "0.24", features=["x11"]}
-# Dependencies for WASM only.
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-bevy = { version = "0.5", default-features = false, features = ["bevy_gltf", "bevy_winit", "render", "png"] }
-bevy_webgl2 = "0.5"
-getrandom = { version="0.2", features=["wasm-bindgen"] }
-
-# [patch.'https://github.com/bevyengine/bevy']
-# bevy = {git = "https://github.com/bevyengine/bevy//", rev="841755aaf23acfd55b375c37390daeb302c5b30b", default-features=false}
-
-# [patch.'https://github.com/mrk-its/bevy_webgl2']
-# bevy_webgl2 = {git = "https://github.com/mrk-its/bevy_webgl2//", rev="035236b8d7ec52b8e9e20399662e89c73e4521f6", default-features=false}
+[profile.dev.package."*"]
+opt-level = 3
 
 [profile.dev]
 opt-level = 1
 
 [profile.release]
-lto = true
-# opt-level = 's'
+lto = "fat"
+codegen-units = 1
+
+[features]
+default = [
+    "bevy/bevy_winit",
+    "bevy/render",
+    "bevy/png",
+    "bevy/x11",
+    "bevy_kira_audio/ogg"
+]
+
+dev = [
+    "bevy/dynamic",
+]
+
+[dependencies]
+bevy = { version = "0.6", default-features = false }
+bevy_kira_audio = { version = "0.8" }
+bevy_asset_loader = { version = "0.8" }
+rand = "0.8.3"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+winit = { version = "0.25", features=["x11"]}
+
+[build-dependencies]
+embed-resource = "1.4"

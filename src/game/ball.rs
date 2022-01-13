@@ -7,6 +7,7 @@ use	super::game;
 /********
     球
  ********/
+#[derive(Component)]
 pub struct	Ball
 {
 	pub	cx: usize,				// 位置
@@ -58,7 +59,7 @@ impl Ball
 
 		let mut	_spr = SpriteSheetBundle::default();
 		_spr.texture_atlas = _tex.clone();
-		_ball.update(&mut _spr.transform, &mut _spr.sprite, &mut _spr.visible);
+		_ball.update(&mut _spr.transform, &mut _spr.sprite, &mut _spr.visibility);
 		_commands
 			.spawn_bundle(_spr)
 			.insert(_ball);
@@ -112,13 +113,13 @@ impl Ball
 	    稼働
 			戻り値	動作中か
 	 **************************/
-	pub fn	update(&mut self, _trans: &mut Transform, _spr: &mut TextureAtlasSprite, _visible: &mut Visible) -> bool
+	pub fn	update(&mut self, _trans: &mut Transform, _spr: &mut TextureAtlasSprite, _visible: &mut Visibility) -> bool
 	{
 		_trans.translation.x = self.x;									// 画面座標
 		_trans.translation.y = self.y;
 		_trans.translation.z = 1.0;
 		if (self.color & 0x08) == 0 {
-			_spr.index = (self.color & 0x0f) as u32;					// 色
+			_spr.index = (self.color & 0x0f) as usize;					// 色
 			_visible.is_visible = true;
 		}
 		else {															// 空白
@@ -178,6 +179,7 @@ impl Ball
 /**********************
     球消去エフェクト
  **********************/
+#[derive(Component)]
 pub struct	BallEffect
 {
 	cnt: isize,				// カウンタ
@@ -193,12 +195,15 @@ impl BallEffect
 						_commands: &mut Commands,
 						_tex: &Handle<TextureAtlas>)
 	{
-		let mut	_spr = TextureAtlasSprite::new(5);
-		_spr.color.set_a(0.7);
 		_commands
 			.spawn_bundle(SpriteSheetBundle
 			{
-				sprite: _spr,
+				sprite: TextureAtlasSprite
+				{
+					index: 5,
+					color: Color::rgba(1.0, 1.0, 1.0, 0.7),
+					..Default::default()
+				},
 				texture_atlas: _tex.clone(),
 				transform: Transform::from_translation(Vec3::new(_x, _y, 2.0)),
 				..Default::default()

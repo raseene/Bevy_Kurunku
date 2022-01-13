@@ -1,12 +1,15 @@
 
 use bevy::prelude::*;
-use	rand::random;
 
 
 /************************
     開始待ちメッセージ
  ************************/
-pub struct	StartMessage;
+#[derive(Component)]
+pub struct	StartMessage
+{
+	cnt: isize,				// アニメーション用カウンタ
+}
 
 impl StartMessage
 {
@@ -52,16 +55,18 @@ impl StartMessage
 						..Default::default()
 					});
 			})
-			.insert(StartMessage);
+			.insert(StartMessage{cnt: 0});
 	}
 
 	/**********
 	    稼働
 	 **********/
-	pub fn	update(&self, _trans: &mut Transform)
+	pub fn	update(&mut self, _trans: &mut Transform)
 	{
-		_trans.translation.x = -152.0 + (((random::<isize>() % 2) + (random::<isize>() % 2) - 2) as f32);
-		_trans.translation.y =    0.0 + (((random::<isize>() % 3) + (random::<isize>() % 3) - 3) as f32);
+		self.cnt = (self.cnt + 1) % 64;
+		let	_t = ((self.cnt as f32)*(std::f32::consts::PI*2.0/64.0)).sin()/8.0;
+		_trans.scale.x = 1.0 + _t;
+		_trans.scale.y = 1.0 - _t;
 	}
 }
 
@@ -69,6 +74,7 @@ impl StartMessage
 /***************
     GAME OVER
  ***************/
+#[derive(Component)]
 pub struct	GameOver
 {
 	cnt: isize,				// アニメーション用カウンタ
@@ -80,11 +86,16 @@ impl GameOver
 	/************
 	    初期化
 	 ************/
-	pub fn	init(_commands: &mut Commands, _mat: &Handle<ColorMaterial>)
+	pub fn	init(_commands: &mut Commands, _tex: &Handle<Image>)
 	{
 		_commands.spawn_bundle(SpriteBundle
 		{
-			material: _mat.clone(),
+			sprite: Sprite
+			{
+				color: Color::rgba(1.0, 1.0, 1.0, 0.0),
+				..Default::default()
+			},
+			texture: _tex.clone(),
 			transform: Transform::from_translation(Vec3::new(-150.0, 14.0, 7.0)),
 			..Default::default()
 		})
@@ -94,7 +105,7 @@ impl GameOver
 	/**********
 	    稼働
 	 **********/
-	pub fn	update(&mut self, _trans: &mut Transform, _mat: &mut ColorMaterial)
+	pub fn	update(&mut self, _trans: &mut Transform, _spr: &mut Sprite)
 	{
 		self.cnt = (self.cnt + 1) % 96;
 		_trans.translation.y = 14.0 - ((self.cnt as f32)*(std::f32::consts::PI*2.0/96.0)).sin()*12.0;
@@ -103,6 +114,6 @@ impl GameOver
 		if self.alpha > 1.0 {
 			self.alpha = 1.0;
 		}
-		_mat.color.set_a(self.alpha);
+		_spr.color.set_a(self.alpha);
 	}
 }

@@ -7,7 +7,7 @@ use	super::game::Value;
 /**************
     描画数値
  **************/
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Component)]
 pub struct	ValueSpr
 {
 	pub value: u32,			// 数値
@@ -75,6 +75,7 @@ impl ValueSpr
 /********************
     数字スプライト
  ********************/
+#[derive(Component)]
 pub struct	NumberSpr
 {
 	pub index: Value,		// 番号
@@ -97,7 +98,7 @@ impl NumberSpr
 			.spawn_bundle(SpriteSheetBundle
 			{
 				texture_atlas: _tex.clone(),
-				visible: Visible{is_visible: _denom == 1, is_transparent: true},
+				visibility: Visibility{is_visible: _denom == 1},
 				transform: Transform::from_translation(Vec3::new(_x, _y, 6.0)),
 				..Default::default()
 			})
@@ -108,10 +109,10 @@ impl NumberSpr
 	    数値設定
 			引数	_val = 数値
 	 *****************************/
-	pub fn	set(&self, _val: u32, _spr: &mut TextureAtlasSprite, _visible: &mut Visible)
+	pub fn	set(&self, _val: u32, _spr: &mut TextureAtlasSprite, _visible: &mut Visibility)
 	{
 		let	_t = _val/self.denominator;
-		_spr.index = _t % 10;
+		_spr.index = (_t % 10) as usize;
 		_visible.is_visible = (_t > 0) || (self.denominator == 1);
 	}
 }
@@ -121,6 +122,7 @@ impl NumberSpr
 /**************************
     獲得スコアエフェクト
  **************************/
+#[derive(Component)]
 pub struct	ScoreEffect
 {
 	cnt: isize,				// カウンタ
@@ -134,7 +136,7 @@ impl ScoreEffect
 					_x, _y = 表示座標
 					_cnt   = カウンタ初期値
 	 *****************************************/
-	pub fn	init(_n: u32, _x: f32, _y: f32, _cnt: isize,
+	pub fn	init(_n: usize, _x: f32, _y: f32, _cnt: isize,
 						_commands: &mut Commands,
 						_tex: &Handle<TextureAtlas>)
 	{
@@ -143,7 +145,7 @@ impl ScoreEffect
 			{
 				sprite: TextureAtlasSprite::new(_n),
 				texture_atlas: _tex.clone(),
-				visible: Visible{is_visible: false, is_transparent: true},
+				visibility: Visibility{is_visible: false},
 				transform: Transform::from_translation(Vec3::new(_x, _y, 4.0)),
 				..Default::default()
 			})
@@ -154,7 +156,7 @@ impl ScoreEffect
 	    稼働
 			戻り値	終了したか
 	 ****************************/
-	pub fn	update(&mut self, _trans: &mut Transform, _spr: &mut TextureAtlasSprite, _visible: &mut Visible) -> bool
+	pub fn	update(&mut self, _trans: &mut Transform, _spr: &mut TextureAtlasSprite, _visible: &mut Visibility) -> bool
 	{
 		self.cnt -= 1;
 		_trans.translation.y += 2.0;

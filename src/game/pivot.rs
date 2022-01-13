@@ -11,6 +11,7 @@ const	PIVOT_H: f32 = 54.0;
 /************
     回転軸
  ************/
+#[derive(Component)]
 pub struct	Pivot
 {
 	pub	cx: usize,			// 位置
@@ -28,7 +29,7 @@ impl Pivot
 	 ***********************************************/
 	pub fn	init(_cx: usize, _cy: usize,
 						_commands: &mut Commands,
-						_mat: &Handle<ColorMaterial>)
+						_tex: &Handle<Image>)
 	{
 		let	x = game::FIELD_X - 25.0 + game::BALL_H + (_cx as f32)*game::BALL_W;				// 画面座標
 		let	y = game::FIELD_Y + 28.0 - (((_cx + 1) & 1) as f32)*game::BALL_H/2.0 + (_cy as f32)*game::BALL_H;
@@ -36,7 +37,7 @@ impl Pivot
 		_commands
 			.spawn_bundle(SpriteBundle
 			{
-				material: _mat.clone(),
+				texture: _tex.clone(),
 				transform: Transform::from_translation(Vec3::new(x, y, 2.0)),
 				..Default::default()
 			})

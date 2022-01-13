@@ -72,7 +72,7 @@ struct	GameProc
 
 	tex_ball: Handle<TextureAtlas>,			// 球用テクスチャ
 	tex_number: Handle<TextureAtlas>,		// 数字エフェクト用テクスチャ
-	mat_over: Handle<ColorMaterial>,		// "GAME OVER"テクスチャマテリアル
+	tex_over: Handle<Image>,				// "GAME OVER"テクスチャ
 
 	bgm_game: Handle<AudioSource>,			// ゲームBGM
 	se_rot: Handle<AudioSource>,			// 回転効果音
@@ -86,12 +86,8 @@ impl GameProc
 	 ************/
 	fn	new(_commands: &mut Commands,
 					_asset: &Res<AssetServer>,
-					_materials: &mut ResMut<Assets<ColorMaterial>>,
 					_tex_atlases: &mut ResMut<Assets<TextureAtlas>>) -> Self
 	{
-		let mut	_mat_over: ColorMaterial = _asset.load("sprite/game_over.png").into();		// "GAME OVER"
-		_mat_over.color.set_a(0.0);
-
 		let	_game = GameProc
 		{
 			phase: Phase::READY,
@@ -107,11 +103,11 @@ impl GameProc
 
 			tex_ball:	_tex_atlases.add(TextureAtlas::from_grid(_asset.load("sprite/ball.png"), Vec2::new(60.0, 60.0), 6, 1)),
 			tex_number:	_tex_atlases.add(TextureAtlas::from_grid(_asset.load("sprite/number_s.png"), Vec2::new(18.0, 24.0), 10, 1)),
-			mat_over:	_materials.add(_mat_over),
+			tex_over:	_asset.load("sprite/game_over.png"),
 
-			bgm_game: _asset.load("audio/bgm_game.ogg"),
-			se_rot: _asset.load("audio/se_rot.ogg"),
-			se_erase: _asset.load("audio/se_erase.ogg"),
+			bgm_game:	_asset.load("audio/bgm_game.ogg"),
+			se_rot:		_asset.load("audio/se_rot.ogg"),
+			se_erase:_asset.load("audio/se_erase.ogg"),
 		};
 		let	_field = GameProc::init_field();												// フィールド初期化
 
@@ -119,7 +115,7 @@ impl GameProc
 		_commands.insert_resource(ClearColor(Color::rgb(0.25, 0.25, 0.25)));				// 背景色
 		_commands.spawn_bundle(SpriteBundle													// スコアボード
 		{
-			material: _materials.add(_asset.load("sprite/board.png").into()),
+			texture: _asset.load("sprite/board.png"),
 			transform: Transform::from_translation(Vec3::new(172.0, 0.0, 5.0)),
 			..Default::default()
 		});
@@ -130,18 +126,18 @@ impl GameProc
 			}
 		}
 
-		let	_mat = _materials.add(_asset.load("sprite/pivot.png").into());
+		let	_tex = _asset.load("sprite/pivot.png");
 		for _x in 0..(FIELD_W - 1) {														// 回転軸
 			for _y in 0..(FIELD_H - 1) {
-				Pivot::init(_x, _y,	_commands, &_mat);
+				Pivot::init(_x, _y,	_commands, &_tex);
 			}
 		}
 
-		GaugeBar::init(Gauge::TIME,		16.0, Vec3::new(36.0, -160.0, 6.0), _materials.add(_asset.load("sprite/timer.png").into()),	_commands);
+		GaugeBar::init_texture(Gauge::TIME,	16.0, Vec3::new(36.0, -160.0, 6.0), _asset.load("sprite/timer.png"),	_commands);
 																							// 残り時間
-		GaugeBar::init(Gauge::COMBO,	6.0, Vec3::new(108.0, -127.0, 6.0), _materials.add(Color::rgb(0.25, 0.75, 0.5).into()),		_commands);
+		GaugeBar::init_color(Gauge::COMBO,	6.0, Vec3::new(108.0, -127.0, 6.0), Color::rgb(0.25, 0.75, 0.5),		_commands);
 																							// コンボ減少ゲージ
-		WarningFilter::init(_commands, _materials);											// タイムアップ警告用
+		WarningFilter::init(_commands);														// タイムアップ警告用
 		StartMessage::init(_commands, &_asset.load("font/FiraSans-Bold.ttf"));				// 開始待ちメッセージ
 
 		_game
@@ -193,7 +189,6 @@ impl GameProc
 						_commands: &mut Commands,
 						_audio: &Res<Audio>,
 						_fade_query: &mut Query<&mut Fade>,
-						_materials: &mut ResMut<Assets<ColorMaterial>>,
 						_ball_query: &mut Query<&mut Ball>,
 						_pivot_query: &mut Query<&mut Pivot>,
 						_ready_query: &mut Query<Entity, With<StartMessage>>) -> bool
@@ -217,7 +212,7 @@ impl GameProc
 					self.phase = Phase::GAME;
 					_audio.set_volume(0.2);
 					_audio.play(self.bgm_game.clone());							// BGM再生
-					_commands.entity(_ready_query.single_mut().unwrap()).despawn_recursive();		// 開始待ちメッセージ消去
+					_commands.entity(_ready_query.single_mut()).despawn_recursive();			// 開始待ちメッセージ消去
 				}
 			},
 
@@ -272,13 +267,13 @@ impl GameProc
 				if self.cnt > 0 {
 					self.cnt -= 1;
 					if self.cnt == 30 {
-						GameOver::init(_commands, &self.mat_over);				// "GAME OVER"
-						OverFilter::init(_commands, _materials);				// フィールドを暗くする
+						GameOver::init(_commands, &self.tex_over);				// "GAME OVER"
+						OverFilter::init(_commands);							// フィールドを暗くする
 					}
 				}
 				else if self.cnt == 0 {
 					if _mouse.is_trigger_l() {
-						_fade_query.single_mut().unwrap().fade_out(8);			// フェードアウト
+						_fade_query.single_mut().fade_out(8);					// フェードアウト
 						self.cnt = -8;
 					}
 				}
@@ -418,7 +413,7 @@ impl GameProc
 
 		let	_d = self.combo*5;
 
-		let mut	score = _d as u32;
+		let mut	score = _d as usize;
 		if _d >= 10 {
 			_x += if _d < 100 {9.0} else {18.0};
 		}
@@ -467,7 +462,7 @@ impl GameProc
 	    コンボ関連稼働
 	 ********************/
 	fn	update_combo(&mut self, _val: &mut GameValue,
-								mut _query: Query<(&mut GaugeBar, &mut Sprite, &mut Transform)>)
+								mut _query: Query<(&mut GaugeBar, &mut Transform)>)
 	{
 		if !self.move_flag && (self.dec_combo > 0) {							// コンボゲージ減算
 			self.dec_combo -= 1;
@@ -484,13 +479,13 @@ impl GameProc
 			_val.combo.set(self.combo);
 		}
 
-		for (mut _gauge, mut _spr, mut _trans) in _query.iter_mut() {			// ゲージ稼働
+		for (mut _gauge, mut _trans) in _query.iter_mut() {						// ゲージ稼働
 			let	_w =	match _gauge.index
 						{
 							Gauge::TIME  => (self.time as f32)*272.0/(60.0*crate::FRAME_RATE),
 							Gauge::COMBO => self.dec_combo as f32,
 						};
-			_gauge.set(_w, &mut _spr, &mut _trans);
+			_gauge.set(_w, &mut _trans);
 		}
 	}
 }
@@ -505,7 +500,6 @@ fn	update_game(mut _game: ResMut<GameProc>,
 							mut _commands: Commands,
 							_audio: Res<Audio>,
 							mut _fade_query: Query<&mut Fade>,
-							mut _materials: ResMut<Assets<ColorMaterial>>,
 							mut _ball_query: Query<&mut Ball>,
 							mut _pivot_query: Query<&mut Pivot>,
 							mut _ready_query: Query<Entity, With<StartMessage>>)
@@ -514,7 +508,6 @@ fn	update_game(mut _game: ResMut<GameProc>,
 						&mut _commands,
 						&_audio,
 						&mut _fade_query,
-						&mut _materials,
 						&mut _ball_query,
 						&mut _pivot_query,
 						&mut _ready_query) {
@@ -526,7 +519,7 @@ fn	update_game(mut _game: ResMut<GameProc>,
     球稼働
  ************/
 fn	update_ball(mut _game: ResMut<GameProc>,
-							mut _query: Query<(&mut Ball, &mut Transform, &mut TextureAtlasSprite, &mut Visible)>)
+							mut _query: Query<(&mut Ball, &mut Transform, &mut TextureAtlasSprite, &mut Visibility)>)
 {
 	_game.move_flag = false;
 	for (mut _ball, mut _trans, mut _spr, mut _visible) in _query.iter_mut() {
@@ -541,7 +534,7 @@ fn	update_ball(mut _game: ResMut<GameProc>,
  ********************/
 fn	update_combo(mut _game: ResMut<GameProc>,
 							mut _val: ResMut<GameValue>,
-							_query: Query<(&mut GaugeBar, &mut Sprite, &mut Transform)>)
+							_query: Query<(&mut GaugeBar, &mut Transform)>)
 {
 	_game.update_combo(&mut _val, _query);
 }
@@ -581,7 +574,7 @@ impl GameValue
 	/**********
 	    稼働
 	 **********/
-	fn	update(&mut self, mut _query: Query<(&NumberSpr, &mut TextureAtlasSprite, &mut Visible)>)
+	fn	update(&mut self, mut _query: Query<(&NumberSpr, &mut TextureAtlasSprite, &mut Visibility)>)
 	{
 		self.score.update();													// スコアアップ稼働
 		if self.score.value > self.hi_score.value {								// ハイスコア更新
@@ -603,7 +596,7 @@ impl GameValue
     数値描画稼働
  ******************/
 fn	update_value(mut _val: ResMut<GameValue>,
-							mut _query: Query<(&NumberSpr, &mut TextureAtlasSprite, &mut Visible)>)
+							mut _query: Query<(&NumberSpr, &mut TextureAtlasSprite, &mut Visibility)>)
 {
 	_val.update(_query);
 }
@@ -636,7 +629,7 @@ fn	update_ball_effect(mut _commands: Commands,
     獲得スコアエフェクト稼働
  ******************************/
 fn	update_score_effect(mut _commands: Commands,
-								mut _query: Query<(Entity, &mut ScoreEffect, &mut Transform, &mut TextureAtlasSprite, &mut Visible)>)
+								mut _query: Query<(Entity, &mut ScoreEffect, &mut Transform, &mut TextureAtlasSprite, &mut Visibility)>)
 {
 	for (_entity, mut _effect, mut _trans, mut _spr, mut _visible) in _query.iter_mut() {
 		if _effect.update(&mut _trans, &mut _spr, &mut _visible) {
@@ -649,21 +642,20 @@ fn	update_score_effect(mut _commands: Commands,
     タイムアップ警告稼働
  **************************/
 fn	update_warning(_game: Res<GameProc>,
-								mut _materials: ResMut<Assets<ColorMaterial>>,
-								mut _query: Query<(&mut WarningFilter, &Handle<ColorMaterial>)>)
+								mut _query: Query<(&mut WarningFilter, &mut Sprite)>)
 {
 	if _game.time < 10*(crate::FRAME_RATE as u32) {								// タイムアップ警告
-		let	(mut _filter, mut _mat) = _query.single_mut().unwrap();
-		_filter.set(0.35 - ((_game.time as f32)*(std::f32::consts::PI/30.0)).cos()*0.35,	_materials.get_mut(_mat).unwrap());
+		let	(mut _filter, mut _spr) = _query.single_mut();
+		_filter.set(0.35 - ((_game.time as f32)*(std::f32::consts::PI/30.0)).cos()*0.35, &mut _spr);
 	}
 }
 
 /****************************
     開始待ちメッセージ稼働
  ****************************/
-fn	update_ready(mut _query: Query<(&StartMessage, &mut Transform)>)
+fn	update_ready(mut _query: Query<(&mut StartMessage, &mut Transform)>)
 {
-	if let Ok((_mes, mut _trans)) = _query.single_mut() {						// 開始待ちメッセージ稼働
+	if let Ok((mut _mes, mut _trans)) = _query.get_single_mut() {				// 開始待ちメッセージ稼働
 		_mes.update(&mut _trans);
 	}
 }
@@ -671,15 +663,16 @@ fn	update_ready(mut _query: Query<(&StartMessage, &mut Transform)>)
 /****************************
     ゲームオーバー表示稼働
  ****************************/
-fn	update_over(mut _materials: ResMut<Assets<ColorMaterial>>,
-								mut _mes_query: Query<(&mut GameOver, &mut Transform, &Handle<ColorMaterial>)>,
-								mut _filter_query: Query<(&mut OverFilter, &Handle<ColorMaterial>)>)
+fn	update_over(mut _query: QuerySet<(
+								QueryState<(&mut GameOver, &mut Transform, &mut Sprite)>,
+								QueryState<(&mut OverFilter, &mut Sprite)>
+							)>)
 {
-	if let Ok((mut _mes, mut _trans, _mat)) = _mes_query.single_mut() {			// "GAME OVER"
-		_mes.update(&mut _trans, _materials.get_mut(_mat).unwrap());
+	if let Ok((mut _mes, mut _trans, mut _spr)) = _query.q0().get_single_mut() {		// "GAME OVER"
+		_mes.update(&mut _trans, &mut _spr);
 	}
-	if let Ok((mut _filter, _mat)) = _filter_query.single_mut() {				// フィールドを暗くする
-		_filter.update(_materials.get_mut(_mat).unwrap());
+	if let Ok((mut _filter, mut _spr)) = _query.q1().get_single_mut() {					// フィールドを暗くする
+		_filter.update(&mut _spr);
 	}
 }
 
@@ -693,7 +686,6 @@ fn	setup(_data: Res<crate::CommonData>,
 					mut _commands: Commands,
 					_asset: Res<AssetServer>,
 					_entity_query: Query<Entity>,
-					mut _materials: ResMut<Assets<ColorMaterial>>,
 					mut _tex_atlases: ResMut<Assets<TextureAtlas>>,
 					mut _fade_query: Query<&mut Fade>)
 {
@@ -703,13 +695,13 @@ fn	setup(_data: Res<crate::CommonData>,
 	}
 	_commands.insert_resource(ResidentEntity(_vec));
 
-	let	_game = GameProc::new(&mut _commands, &_asset, &mut _materials, &mut _tex_atlases);			// ゲーム処理
+	let	_game = GameProc::new(&mut _commands, &_asset, &mut _tex_atlases);		// ゲーム処理
 	_commands.insert_resource(_game);
 
 	let	_value = GameValue::new(_data.hi_score, &mut _commands, &_asset, &mut _tex_atlases);		// 数値描画
 	_commands.insert_resource(_value);
 
-	_fade_query.single_mut().unwrap().fade_in(8);								// フェードイン
+	_fade_query.single_mut().fade_in(8);										// フェードイン
 }
 
 /**********
@@ -742,37 +734,36 @@ pub struct	GamePlugin;
 
 impl Plugin for GamePlugin
 {
-	fn	build(&self, _app: &mut AppBuilder)
+	fn	build(&self, _app: &mut App)
 	{
 		_app.add_system_set(
 			SystemSet::on_enter(crate::AppState::GAME)
-				.with_system(setup.system())											// ゲーム初期化
+				.with_system(setup)												// ゲーム初期化
 		);
 		_app.add_system_set(
 			SystemSet::on_update(crate::AppState::GAME)
 				.with_run_criteria(FixedTimestep::step(1.0/(crate::FRAME_RATE as f64)).chain(
-					(|In(_input): In<ShouldRun>, state: Res<State<crate::AppState>>|
+					|In(_input): In<ShouldRun>, state: Res<State<crate::AppState>>|
 					{
 						if state.current() == &crate::AppState::GAME {_input} else {ShouldRun::No}
 					})
-					.system())
 				)
-				.with_system(crate::mouse::update.system().label("mouse"))				// マウス処理
-				.with_system(update_game.system().label("game").after("mouse"))			// ゲーム進行処理
-				.with_system(update_ball.system().label("ball").after("game"))			// 球稼働
-				.with_system(update_combo.system().label("combo").after("ball"))		// コンボ関連稼働
-				.with_system(update_value.system().after("combo"))						// 数値描画稼働
-				.with_system(update_pivot.system().after("game"))						// 回転軸稼働
-				.with_system(update_ball_effect.system().after("game"))					// 球消去エフェクト稼働
-				.with_system(update_score_effect.system().after("game"))				// 獲得スコアエフェクト稼働
-				.with_system(update_warning.system().after("game"))						// タイムアップ警告稼働
-				.with_system(update_ready.system().after("game"))						// 開始待ちメッセージ稼働
-				.with_system(update_over.system().after("game"))						// ゲームオーバー表示稼働
-				.with_system(crate::fade::update.system().after("game"))				// フェード処理
+				.with_system(crate::mouse::update.label("mouse"))				// マウス処理
+				.with_system(update_game.label("game").after("mouse"))			// ゲーム進行処理
+				.with_system(update_ball.label("ball").after("game"))			// 球稼働
+				.with_system(update_combo.label("combo").after("ball"))			// コンボ関連稼働
+				.with_system(update_value.after("combo"))						// 数値描画稼働
+				.with_system(update_pivot.after("game"))						// 回転軸稼働
+				.with_system(update_ball_effect.after("game"))					// 球消去エフェクト稼働
+				.with_system(update_score_effect.after("game"))					// 獲得スコアエフェクト稼働
+				.with_system(update_warning.after("game"))						// タイムアップ警告稼働
+				.with_system(update_ready.after("game"))						// 開始待ちメッセージ稼働
+				.with_system(update_over.after("game"))							// ゲームオーバー表示稼働
+				.with_system(crate::fade::update.after("game"))					// フェード処理
 		);
 		_app.add_system_set(
 			SystemSet::on_exit(crate::AppState::GAME)
-				.with_system(exit.system())												// 終了
+				.with_system(exit)												// 終了
 		);
 	}
 }

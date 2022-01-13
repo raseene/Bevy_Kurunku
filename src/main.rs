@@ -38,7 +38,7 @@ pub struct	CommonData
  ************/
 fn	main()
 {
-	let mut	app = App::build();
+	let mut	app = App::new();
 
 	app.insert_resource(WindowDescriptor
 	{
@@ -46,18 +46,16 @@ fn	main()
 		width: SCREEN_WIDTH/SCREEN_SCALE,
 		height: SCREEN_HEIGHT/SCREEN_SCALE,
 		resizable: false,
-		#[cfg(target_arch = "wasm32")]
-		canvas:Some("canvas".to_string()),
+		#[cfg(all(target_arch = "wasm32", not(debug_assertions)))]
+		canvas: Some("canvas".to_string()),
 		..Default::default()
 	});
 	app.add_plugins(DefaultPlugins);
 	app.add_plugin(AudioPlugin);										// オーディオ
-	#[cfg(target_arch = "wasm32")]
-	app.add_plugin(bevy_webgl2::WebGL2Plugin);
 
-	app.add_startup_system(setup.system());								// 初期化
+	app.add_startup_system(setup);										// 初期化
 	app.insert_resource(mouse::Mouse::new())							// マウス管理
-		.add_system(mouse::input.system());
+		.add_system(mouse::input);
 	app.insert_resource(CommonData{hi_score: 0});						// 共通データ
 
 	app.add_plugin(loading::LoadingPlugin);								// アセットの先読み
@@ -66,15 +64,14 @@ fn	main()
 	app.add_system_set(
 		SystemSet::on_enter(AppState::NEXT)
 			.with_system(
-				(|mut _state: ResMut<State<crate::AppState>>|
+				|mut _state: ResMut<State<crate::AppState>>|
 				{
 					_state.set(AppState::GAME).unwrap();
-				})
-				.system()
+				}
 			)
 	);
 
-	app.add_state(AppState::LOADING)
+	app.add_state(AppState::LOADING)									// ローディング画面開始
 		.run();
 }
 
